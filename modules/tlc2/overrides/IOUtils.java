@@ -85,7 +85,6 @@ public class IOUtils {
 
 		Boolean fail = true;
 		for(SerializerService serializerService : loader) {
-			System.out.println(serializerService.getType());
 
 			if(serializerService.getType().equals(serializerStr)) {
 				serializerService.serialize(value, absolutePath, options);
