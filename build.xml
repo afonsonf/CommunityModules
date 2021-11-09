@@ -43,6 +43,7 @@
              includes="*.tla,*.java"/>
 			<fileset dir="."
              includes="LICENSE,README.md"/>
+			<fileset dir="${src}/resources" includes="**/*"/>
 		</jar>
 
 

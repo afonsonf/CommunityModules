@@ -10,6 +10,15 @@ IOSerialize(val, absoluteFilename, compress) == TRUE
 
 IODeserialize(absoluteFilename, compressed) == CHOOSE val : TRUE
 
+Serialize(value, dest, serializer, options) ==
+    (* value: TLA+ value to be serialized. *)
+    (* dest: Destination to serialize to such as a file or URL. *)
+    (* options: Record of serializer-specific options. *)
+    CHOOSE r \in [exitValue : Int, stdout : STRING, stderr : STRING] : TRUE
+    
+Deserialize(src, serializer, options) ==
+    CHOOSE val : TRUE
+
 ----------------------------------------------------------------------------
 
 IOExec(command) ==

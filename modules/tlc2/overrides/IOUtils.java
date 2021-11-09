@@ -34,8 +34,10 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.ServiceLoader;
 
 import tlc2.output.EC;
+import tlc2.serializers.SerializerService;
 import tlc2.tool.EvalException;
 import tlc2.value.IValue;
 import tlc2.value.ValueInputStream;
@@ -52,7 +54,7 @@ import util.UniqueString;
 public class IOUtils {
 
 	@TLAPlusOperator(identifier = "IODeserialize", module = "IOUtils", warn = false)
-	public static final IValue deserialize(final StringValue absolutePath, final BoolValue compress)
+	public static final IValue ioDeserialize(final StringValue absolutePath, final BoolValue compress)
 			throws IOException {
 		final ValueInputStream vis = new ValueInputStream(new File(absolutePath.val.toString()), compress.val);
 		try {
@@ -63,7 +65,7 @@ public class IOUtils {
 	}
 
 	@TLAPlusOperator(identifier = "IOSerialize", module = "IOUtils", warn = false)
-	public static final IValue serialize(final IValue value, final StringValue absolutePath, final BoolValue compress)
+	public static final IValue ioSerialize(final IValue value, final StringValue absolutePath, final BoolValue compress)
 			throws IOException {
 		final ValueOutputStream vos = new ValueOutputStream(new File(absolutePath.val.toString()), compress.val);
 		try {
@@ -73,15 +75,54 @@ public class IOUtils {
 		}
 		return BoolValue.ValTrue;
 	}
-	
+
+	@TLAPlusOperator(identifier = "Serialize", module = "IOUtils", warn = false)
+	public static final Value serialize(final Value value, final StringValue absolutePath, final StringValue serializer, RecordValue options)
+			throws IOException {
+
+		final String serializerStr = serializer.getVal().toString();
+		ServiceLoader<SerializerService> loader = ServiceLoader.load(SerializerService.class);
+
+		Boolean fail = true;
+		for(SerializerService serializerService : loader) {
+			System.out.println(serializerService.getType());
+
+			if(serializerService.getType().equals(serializerStr)) {
+				serializerService.serialize(value, absolutePath, options);
+				fail = false;
+				break;
+			}
+
+		}
+
+		if(fail) return BoolValue.ValFalse;
+		return BoolValue.ValTrue;
+	}
+
+	@TLAPlusOperator(identifier = "Deserialize", module = "IOUtils", warn = false)
+	public static final Value deserialize(final StringValue absolutePath, final StringValue serializer, final RecordValue options)
+			throws IOException {
+
+		final String serializerStr = serializer.getVal().toString();
+		ServiceLoader<SerializerService> loader = ServiceLoader.load(SerializerService.class);
+
+		for(SerializerService serializerService : loader) {
+			if(serializerService.getType().equals(serializerStr)) {
+				return serializerService.deserialize(absolutePath, options);
+			}
+		}
+
+		return BoolValue.ValFalse;
+	}
+
 	static {
 		// Eagerly lookup the environment, which is not going to change while the Java
 		// process executes.
 		final Map<String, String> env = System.getenv();
-		
+
 		final UniqueString[] names = new UniqueString[env.size()];
 		final StringValue[] values = new StringValue[env.size()];
-		
+
 		final List<Map.Entry<String, String>> entries = new ArrayList<>(env.entrySet());
 		for (int i = 0; i < entries.size(); i++) {
 			names[i] = UniqueString.of(entries.get(i).getKey());
