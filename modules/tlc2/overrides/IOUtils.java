@@ -29,15 +29,14 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.ServiceLoader;
 
 import tlc2.output.EC;
-import tlc2.serializers.SerializerService;
 import tlc2.tool.EvalException;
 import tlc2.value.IValue;
 import tlc2.value.ValueInputStream;
@@ -81,20 +80,17 @@ public class IOUtils {
 			throws IOException {
 
 		final String serializerStr = serializer.getVal().toString();
-		ServiceLoader<SerializerService> loader = ServiceLoader.load(SerializerService.class);
-
-		Boolean fail = true;
-		for(SerializerService serializerService : loader) {
-
-			if(serializerService.getType().equals(serializerStr)) {
-				serializerService.serialize(value, absolutePath, options);
-				fail = false;
-				break;
-			}
-
+		
+		try {
+			Class<?> serializerClass = Class.forName(serializerStr);
+			Method serializerMethod = serializerClass.getMethod("serialize", Value.class, StringValue.class, RecordValue.class);
+			Object serializerInstance = serializerClass.getDeclaredConstructor().newInstance();
+			serializerMethod.invoke(serializerInstance, value, absolutePath, options);
+		} catch (Exception e) {
+			System.out.println(e.getMessage());
+			return BoolValue.ValFalse;
 		}
 
-		if(fail) return BoolValue.ValFalse;
 		return BoolValue.ValTrue;
 	}
 
@@ -103,15 +99,16 @@ public class IOUtils {
 			throws IOException {
 
 		final String serializerStr = serializer.getVal().toString();
-		ServiceLoader<SerializerService> loader = ServiceLoader.load(SerializerService.class);
-
-		for(SerializerService serializerService : loader) {
-			if(serializerService.getType().equals(serializerStr)) {
-				return serializerService.deserialize(absolutePath, options);
-			}
+				
+		try {
+			Class<?> serializerClass = Class.forName(serializerStr);
+			Method serializerMethod = serializerClass.getMethod("deserialize", StringValue.class, RecordValue.class);
+			Object serializerInstance = serializerClass.getDeclaredConstructor().newInstance();
+			return (Value) serializerMethod.invoke(serializerInstance, absolutePath, options);
+		} catch (Exception e) {
+			System.out.println(e.getMessage());
+			return BoolValue.ValFalse;
 		}
-
-		return BoolValue.ValFalse;
 	}
 
 	static {

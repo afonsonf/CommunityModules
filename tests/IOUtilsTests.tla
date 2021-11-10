@@ -5,11 +5,11 @@ ASSUME PrintT("SerializeTests!A")
 
 TestVal == [some |-> "1", record |-> 1]
 file == "test-file-serialize"
-ASSUME(Serialize(TestVal, file, "RAW", [compress |-> FALSE]))
-ASSUME(Deserialize(file, "RAW", [compress |-> FALSE]) = TestVal)
+ASSUME(Serialize(TestVal, file, "tlc2.serializers.RawSerializer", [compress |-> FALSE]))
+ASSUME(Deserialize(file, "tlc2.serializers.RawSerializer", [compress |-> FALSE]) = TestVal)
 
-ASSUME(Serialize(TestVal, file, "RAW", [compress |-> TRUE]))
-ASSUME(Deserialize(file, "RAW", [compress |-> TRUE]) = TestVal)
+ASSUME(Serialize(TestVal, file, "tlc2.serializers.RawSerializer", [compress |-> TRUE]))
+ASSUME(Deserialize(file, "tlc2.serializers.RawSerializer", [compress |-> TRUE]) = TestVal)
 
 ASSUME PrintT("IOUtilsTests!A")
 
